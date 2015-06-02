@@ -8,7 +8,7 @@
 #include <limits.h>
 #include <getopt.h>
 
-char *usage = "rand:  simple random integer generator using /dev/random\nrand [-hdxrun] [[min] max]\n-h\tThis help\n-d/-x\tOutput in decimal (default) or hexadecimal\n-r/-u\tUse /dev/random (default) or /dev/urandom\n-n num\tOutput num numbers (default 1)\nmin\tMinimum number (default 0)\nmax\tMaximum number (default UINT_MAX)\n";
+char *usage = "rand:  simple random integer generator using /dev/random\nrand [-hdxrun] [[min] max]\n-h\tThis help\n-d/-x\tOutput in decimal (default) or hexadecimal\n-u/-r\tUse /dev/urandom (default) or /dev/random\n-n num\tOutput num numbers (default 1)\nmin\tMinimum number (default 0)\nmax\tMaximum number (default UINT_MAX)\n";
 
 void die(char *msg)
 {
