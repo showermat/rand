@@ -5,9 +5,10 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <limits.h>
 #include <getopt.h>
 
-char *usage = "rand:  simple random integer generator using /dev/random\nrand [-hdxrun] [[min] max]\n-h\tThis help\n-d/-x\tOutput in decimal (default) or hexadecimal\n-r/-u\tUse /dev/random (default) or /dev/urandom\n-n num\tOutput num numbers (default 1)\nmin\tMinimum number (default 0)\nmax\tMaximum number (default INT_MAX)\n";
+char *usage = "rand:  simple random integer generator using /dev/random\nrand [-hdxrun] [[min] max]\n-h\tThis help\n-d/-x\tOutput in decimal (default) or hexadecimal\n-r/-u\tUse /dev/random (default) or /dev/urandom\n-n num\tOutput num numbers (default 1)\nmin\tMinimum number (default 0)\nmax\tMaximum number (default UINT_MAX)\n";
 
 void die(char *msg)
 {
@@ -18,10 +19,10 @@ void die(char *msg)
 int main(int argc, char **argv)
 {
 	// Important variables
-	int min = 0, max = 0;
+	unsigned int min = 0, max = UINT_MAX;
 	int n = 1;
 	int base = 10, range = 0;
-	char *randpath = "/dev/random";
+	char *randpath = "/dev/urandom";
 	
 	// Read arguments
 	int opt;
@@ -48,12 +49,14 @@ int main(int argc, char **argv)
 	}
 	else if (optcnt == argc - 1)
 	{
+		range = 1;
 		errno = 0;
 		max = strtol(argv[optcnt], NULL, 10);
 		if (errno) die(usage);
 	}
 	else if (optcnt == argc - 2)
 	{
+		range = 1;
 		errno = 0;
 		min = strtol(argv[optcnt], NULL, 10);
 		max = strtol(argv[optcnt + 1], NULL, 10);
@@ -67,13 +70,11 @@ int main(int argc, char **argv)
 		min = max;
 		max = t;
 	}
-	if (min == 0 && max == 0) range = 0;
-	else range = 1;
 	
 	// The trivial case
 	if (min == max)
 	{
-		for (int i = 0; i < n; i++) printf("%d\n", min);
+		for (int i = 0; i < n; i++) printf("%u\n", min);
 		return 0;
 	}
 	
@@ -82,12 +83,12 @@ int main(int argc, char **argv)
 	FILE *randfile = fopen(randpath, "r");
 	if (randfile == NULL)
 	{
-		printf("Error %d opening %s for reading.\n", errno, randpath);
-		exit(1);
+		perror("Could not open random file for reading");
+		return 1;
 	}
 	
 	// Get and print random data
-	int nchars = sizeof(int) / sizeof(char);
+	int nchars = sizeof(unsigned int) / sizeof(char);
 	unsigned char c[nchars];
 	unsigned int rand;
 	int cnt = 0;
@@ -101,12 +102,8 @@ int main(int argc, char **argv)
 			c[j] = (unsigned char) (t & 0xFF);
 		}
 		
-		for (int j = 0; j < sizeof(int); j++) rand |= c[j] << (j * sizeof(char) * 8);
-		if (range)
-		{
-			rand %= max - min + 1;
-			rand += min;
-		}
+		for (int j = 0; j < nchars; j++) rand |= c[j] << (j * sizeof(char) * 8);
+		if (range) rand = rand % (max - min + 1) + min;
 		if (base == 10) printf("%u\n", rand);
 		else if (base == 16) printf("%x\n", rand);
 		if (n > 0) cnt++;
